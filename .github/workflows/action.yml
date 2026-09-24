@@ -11,18 +11,45 @@ on:
 
 jobs:
   build-job:
-    name: Build Latest SQLite3
+    name: Perl ${{ matrix.perl }} / DBI ${{ matrix.dbi }} / SQLite3
     runs-on: ubuntu-latest
-    container:
-      image: perldocker/perl-tester:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # DBI 1.609 is the declared minimum.  Use an older Perl for the
+          # oldest DBI releases, whose XS does not compile on current Perl.
+          - perl: "5.16"
+            dbi: "1.609"
+          # sql_type_cast support, and its test, begin with DBI 1.611.
+          - perl: "5.16"
+            dbi: "1.611"
+          # Exercise both sides of DBIXS_VERSION feature detection.
+          - perl: "5.38"
+            dbi: "1.647"
+          - perl: "5.38"
+            dbi: "1.648"
+          - perl: "latest"
+            dbi: "latest"
     env:
       DBI_DSN: dbi:ODBC:DRIVER=SQLite3
       PERL_MM_USE_DEFAULT: 1
       DBD_ODBC_UNICODE: 1
+      AUTHOR_TESTING: 1
     steps:
-      - uses: actions/checkout@v3
-      - run: apt-get update -y
-      - run: apt-get install -y unixodbc unixodbc-dev libsqliteodbc
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+      - run: sudo apt-get update -y
+      - run: sudo apt-get install -y unixodbc unixodbc-dev libsqliteodbc
       - run: perl -V
-      - run: cpanm DBI Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
+      - name: Install DBI ${{ matrix.dbi }} and test dependencies
+        run: |
+          if [ "${{ matrix.dbi }}" = latest ]; then
+            cpanm DBI
+          else
+            cpanm "DBI@${{ matrix.dbi }}"
+          fi
+          cpanm Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
       - run: perl Makefile.PL && make && make test

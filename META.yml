@@ -18,7 +18,7 @@ requires:
 # get postamble etc
 #
 build_requires:
-  DBI: 1.21
+  DBI: 1.609
   ExtUtils::MakeMaker: 0
   Test::Simple: 0.90
   Config: 0
@@ -30,7 +30,7 @@ build_requires:
   warnings: 0
   utf8: 0
 configure_requires:
-  DBI: 1.21
+  DBI: 1.609
   ExtUtils::MakeMaker: 0
 recommends:
   Test::Version: 1.002001
