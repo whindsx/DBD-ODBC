@@ -33,7 +33,7 @@ $DBD::ODBC::VERSION = '1.62_1';
 
     # my $Revision = substr(q$Id$, 13,2);
 
-    require_version DBI 1.609;
+    require_version DBI 1.611;
 
     bootstrap DBD::ODBC $VERSION;
 

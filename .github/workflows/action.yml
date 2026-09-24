@@ -17,17 +17,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # DBI 1.609 is the declared minimum.  Use an older Perl for the
-          # oldest DBI releases, whose XS does not compile on current Perl.
-          - perl: "5.16"
-            dbi: "1.609"
-          # sql_type_cast support, and its test, begin with DBI 1.611.
+          # DBI 1.611 is the supported minimum and the first stable release
+          # with the casting API required by DBD::ODBC.
           - perl: "5.16"
             dbi: "1.611"
-          # Exercise both sides of DBIXS_VERSION feature detection.
+          - perl: "5.36"
+            dbi: "1.611"
+          # Exercise both sides of the DBIXS_REVISION regression boundary.
           - perl: "5.38"
+            dbi: "1.646"
+          - perl: "5.42"
             dbi: "1.647"
-          - perl: "5.38"
+          # Cover a newer fixed DBI on a newer stable Perl.
+          - perl: "5.40"
             dbi: "1.648"
           - perl: "latest"
             dbi: "latest"
@@ -49,7 +51,9 @@ jobs:
           if [ "${{ matrix.dbi }}" = latest ]; then
             cpanm DBI
           else
-            cpanm "DBI@${{ matrix.dbi }}"
+            # Old DBI distributions have test-suite failures on current
+            # runners. DBD::ODBC's suite is the compatibility test here.
+            cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
           cpanm Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
       - run: perl Makefile.PL && make && make test

@@ -12,7 +12,7 @@ section in ODBC.pm for usage and distribution rights.
     Build, test and install Perl 5 (as per DBI specifications/compatibility)
     It is very important to TEST it and INSTALL it.
 
-    Build, test and install the DBI module (at least DBI 1.609).
+    Build, test and install the DBI module (at least DBI 1.611).
     It is very important to TEST it and INSTALL it.
 
     Remember to *read* the DBD::ODBC.pm POD documentation and the

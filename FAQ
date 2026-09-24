@@ -800,12 +800,12 @@ It is my fault. Basically, I changed DBD::ODBC to use Devel::PPPort's
 my_snprintf instead of sprintf (for safety) but because of the way DBI
 includes ppport.h (as dbipport.h) I cannot override it in DBD::ODBC.
 This should now be fixed in DBI but I cannot retrofit it so if you
-get this error you need to upgrade DBI to at least version 1.609.
+get this error you need to upgrade DBI to at least version 1.611.
 Sorry, some things are as they are.
 
-From DBD::ODBC 1.26_1 a requirement is DBI 1.609 so this should not be
-an issue but the 1.24 and 1.25 series DBD::ODBC did not have this
-requirement.
+From DBD::ODBC 1.26_1 the requirement was DBI 1.609, so this should not
+have affected later releases. Current DBD::ODBC releases require DBI
+1.611; the 1.24 and 1.25 series did not have this requirement.
 
 =head2 Why can I appear to insert more than 255 chrs into a MS Access text column but when I read them back I only get 255 chrs?
 
@@ -1354,4 +1354,3 @@ at your option, any later version of Perl 5 you may have available.
 
 
 =cut
-
