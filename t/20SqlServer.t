@@ -678,6 +678,11 @@ AS
        $dsn = join(q/:/, @a[0..($#a - 1)]) . ":DSN=" . $a[-1];
    }
    my $base_dsn = $dsn;
+   # This test explicitly exercises both MARS modes. Remove a setting from
+   # the supplied DSN so appending the mode under test cannot leave duplicate
+   # attributes whose precedence is driver-dependent.
+   $base_dsn =~ s/;MARS_Connection=[^;]*//ig;
+   $dsn = $base_dsn;
    $dsn .= ";MARS_Connection=no";
    $dbh = DBI->connect($dsn, $ENV{DBI_USER}, $ENV{DBI_PASS}, {PrintError => 0});
    ok($dbh, "Connected with MARS_Connection");

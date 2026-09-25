@@ -3800,6 +3800,18 @@ static void get_param_type(
                   "      get_param_type: modified value type to SQL_C_WCHAR\n");
        }
        break;
+     default:
+       /* A parameter may have been bound as SQL_C_WCHAR by a previous
+          execute. Reset it when the new value is not a Unicode SQL type so
+          rebind_param can bind the new narrow value as SQL_C_CHAR. */
+       if (phs->value_type == SQL_C_WCHAR) {
+           phs->value_type = SQL_C_CHAR;
+           if (DBIc_TRACE(imp_sth, DBD_TRACING, 0, 8)) {
+               TRACE0(imp_dbh,
+                      "      get_param_type: reset value type to SQL_C_CHAR\n");
+           }
+       }
+       break;
    }
 #endif /* WITH_UNICODE */
    if (DBIc_TRACE(imp_sth, DBD_TRACING, 0, 8))

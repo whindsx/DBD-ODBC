@@ -8,6 +8,7 @@ use open ':std', ':encoding(utf8)';
 use Test::More;
 use strict;
 use Data::Dumper;
+use Encode qw(encode);
 
 $| = 1;
 
@@ -237,7 +238,16 @@ my $codepage;
 # a simple codepage string
 {
     use bytes;
-    $codepage = chr(0xa3) . chr(0x80); # it is important this is different to $unicode
+    if ($^O ne 'MSWin32' && $driver_name =~ /^libmsodbcsql/i) {
+        # The Microsoft ODBC driver on Linux uses UTF-8 for SQLCHAR data
+        # when the process locale is UTF-8 (and defaults to UTF-8 for the C
+        # locale). Keep this string byte-oriented while encoding the same
+        # pound/euro characters represented by 0xa3/0x80 in CP1252.
+        $codepage = encode('UTF-8', "\x{a3}\x{20ac}");
+    } else {
+        $codepage = chr(0xa3) . chr(0x80);
+    }
+    # It is important that the UTF8 flag is off, unlike $unicode.
 }
 diag "Inserting a codepage/bytes string:\n";
 $s = $dbh->prepare($sql); # redo to ensure no sticky params
