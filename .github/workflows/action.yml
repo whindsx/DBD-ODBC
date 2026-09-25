@@ -17,12 +17,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # DBI 1.611 is the supported minimum and the first stable release
-          # with the casting API required by DBD::ODBC.
+          # Match DBD::MariaDB's supported DBI floor while retaining the
+          # casting API required by DBD::ODBC.
           - perl: "5.16"
-            dbi: "1.611"
+            dbi: "1.627"
           - perl: "5.36"
-            dbi: "1.611"
+            dbi: "1.627"
+          - perl: "5.36"
+            dbi: "1.641"
           # Exercise both sides of the DBIXS_REVISION regression boundary.
           - perl: "5.38"
             dbi: "1.646"

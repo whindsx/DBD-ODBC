@@ -10,7 +10,7 @@ author:
 license: perl
 distribution_type: module
 requires:
-    DBI: 1.611
+    DBI: 1.627
     perl: 5.008
     Test::Simple: 0.90
 #
@@ -18,7 +18,7 @@ requires:
 # get postamble etc
 #
 build_requires:
-  DBI: 1.611
+  DBI: 1.627
   ExtUtils::MakeMaker: 0
   Test::Simple: 0.90
   Config: 0
@@ -30,7 +30,7 @@ build_requires:
   warnings: 0
   utf8: 0
 configure_requires:
-  DBI: 1.611
+  DBI: 1.627
   ExtUtils::MakeMaker: 0
 recommends:
   Test::Version: 1.002001
