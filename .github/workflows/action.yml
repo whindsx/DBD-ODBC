@@ -49,11 +49,11 @@ jobs:
       - name: Install DBI ${{ matrix.dbi }} and test dependencies
         run: |
           if [ "${{ matrix.dbi }}" = latest ]; then
-            cpanm DBI
+            cpanm --notest DBI
           else
             # Old DBI distributions have test-suite failures on current
             # runners. DBD::ODBC's suite is the compatibility test here.
             cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
-          cpanm Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
+          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
       - run: perl Makefile.PL && make && make test
