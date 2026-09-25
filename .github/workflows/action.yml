@@ -57,7 +57,7 @@ jobs:
             # runners. DBD::ODBC's suite is the compatibility test here.
             cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
-          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
+          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
       - run: perl Makefile.PL && make && make test
 
   sqlserver-job:
@@ -92,7 +92,7 @@ jobs:
         ports:
           - 1433:1433
     env:
-      DBI_DSN: dbi:ODBC:DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost,1433;DATABASE=tempdb;Encrypt=No
+      DBI_DSN: dbi:ODBC:DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost,1433;DATABASE=tempdb;Encrypt=No;MARS_Connection=Yes
       DBI_USER: sa
       DBI_PASS: DBD0dbc_Strong_Pass!
       PERL_MM_USE_DEFAULT: 1
@@ -135,5 +135,5 @@ jobs:
           else
             cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
-          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee
+          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
       - run: perl Makefile.PL && make && make test
