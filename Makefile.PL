@@ -107,7 +107,7 @@ my %opts =
     BUILD_REQUIRES => {
         "Test::Simple" => 0.90, # actually Test::More pkg in T::S dist,
         "Test::Output" => 1.031 },
-    PREREQ_PM    => { "DBI" => 1.609 },
+    PREREQ_PM    => { "DBI" => 1.627 },
     clean        => { FILES => 'ODBC.xsi dbdodbc.h' },
     dist         => {
 	DIST_DEFAULT => 'clean distcheck tardist',

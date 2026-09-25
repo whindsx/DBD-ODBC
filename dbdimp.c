@@ -3328,7 +3328,7 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
             else {
                 /*
                  * SQLMoreResults not supported, just finish.
-                 * per bug found by Jarkko Hyöty [hyoty@medialab.sonera.fi]
+                 * per bug found by Jarkko HyÃ¶ty [hyoty@medialab.sonera.fi]
                  * No more results
                  */
                 imp_sth->moreResults = 0;
@@ -3491,7 +3491,6 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
                            fbh->datalen);
             }
         }
-#if DBIXS_REVISION > 13590
         /* If a bind type was specified we use DBI's sql_type_cast
            to cast it - currently only number types are handled */
         if (
@@ -3528,8 +3527,6 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
                 return Nullav;
             }
         }
-#endif /* DBIXS_REVISION > 13590 */
-
     } /* end of loop through bound columns */
     return av;
 }
@@ -4401,7 +4398,6 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "TreatAsLOB", 10, svp)) {
             imp_sth->fbh[field-1].bind_flags |= ODBC_TREAT_AS_LOB;
         }
-#if DBIXS_REVISION >= 13590
         if (DBD_ATTRIB_TRUE(attribs, "StrictlyTyped", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_STRICT;
         }
@@ -4409,7 +4405,6 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "DiscardString", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_DISCARD_STRING;
         }
-#endif  /* DBIXS_REVISION >= 13590 */
     }
 
     if (DBIc_TRACE(imp_sth, DBD_TRACING, 0, 4)) {

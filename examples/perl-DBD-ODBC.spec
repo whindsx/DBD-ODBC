@@ -11,11 +11,11 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # build dependencies from MEYA.yml
 BuildRequires: perl(ExtUtils::MakeMaker)
-BuildRequires: perl(DBI) >= 1.609
+BuildRequires: perl(DBI) >= 1.627
 BuildRequires: perl(Test::Simple) >= 0.90
 BuildRequires: unixODBC-devel > 2.2.5
 Requires: perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires: perl(DBI) >= 1.6909
+Requires: perl(DBI) >= 1.627
 Requires: unixODBC > 2.2.5
 
 %{?perl_default_filter}
