@@ -18,10 +18,10 @@ jobs:
       matrix:
         include:
           # Keep the existing DBI floor and exercise the first casting API.
-          # These old DBI releases need an older Perl to build.
-          - perl: "5.16"
+          # Perl 5.14 removed aliases still used by these DBI releases.
+          - perl: "5.12"
             dbi: "1.609"
-          - perl: "5.16"
+          - perl: "5.12"
             dbi: "1.611"
           - perl: "5.16"
             dbi: "1.627"
@@ -78,10 +78,10 @@ jobs:
       matrix:
         include:
           # Keep the existing DBI floor and exercise the first casting API.
-          # These old DBI releases need an older Perl to build.
-          - perl: "5.16"
+          # Perl 5.14 removed aliases still used by these DBI releases.
+          - perl: "5.12"
             dbi: "1.609"
-          - perl: "5.16"
+          - perl: "5.12"
             dbi: "1.611"
           - perl: "5.16"
             dbi: "1.627"
