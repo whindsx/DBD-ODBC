@@ -59,7 +59,7 @@ jobs:
           else
             # Old DBI distributions have test-suite failures on current
             # runners. DBD::ODBC's suite is the compatibility test here.
-            cpanm --notest "DBI@${{ matrix.dbi }}"
+            cpanm --verbose --notest "DBI@${{ matrix.dbi }}"
           fi
           cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
       - name: Verify DBI version
@@ -148,7 +148,7 @@ jobs:
           if [ "${{ matrix.dbi }}" = latest ]; then
             cpanm --notest DBI
           else
-            cpanm --notest "DBI@${{ matrix.dbi }}"
+            cpanm --verbose --notest "DBI@${{ matrix.dbi }}"
           fi
           cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
       - name: Verify DBI version
