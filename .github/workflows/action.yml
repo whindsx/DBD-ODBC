@@ -3,10 +3,10 @@ name: build
 on:
   push:
     branches:
-      - "*"
+      - "**"
   pull_request:
     branches:
-      - "*"
+      - "**"
   workflow_dispatch:
 
 jobs:
@@ -17,8 +17,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Match DBD::MariaDB's supported DBI floor while retaining the
-          # casting API required by DBD::ODBC.
+          # Keep the existing DBI floor and exercise the first casting API.
+          # These old DBI releases need an older Perl to build.
+          - perl: "5.16"
+            dbi: "1.609"
+          - perl: "5.16"
+            dbi: "1.611"
           - perl: "5.16"
             dbi: "1.627"
           - perl: "5.36"
@@ -58,6 +62,11 @@ jobs:
             cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
           cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
+      - name: Verify DBI version
+        env:
+          EXPECTED_DBI_VERSION: ${{ matrix.dbi }}
+        run: |
+          perl -MDBI -e 'print "DBI $DBI::VERSION\n"; die "Unexpected DBI version\n" if $ENV{EXPECTED_DBI_VERSION} ne "latest" && $DBI::VERSION != $ENV{EXPECTED_DBI_VERSION};'
       - run: perl Makefile.PL && make && make test
 
   sqlserver-job:
@@ -68,6 +77,12 @@ jobs:
       max-parallel: 3
       matrix:
         include:
+          # Keep the existing DBI floor and exercise the first casting API.
+          # These old DBI releases need an older Perl to build.
+          - perl: "5.16"
+            dbi: "1.609"
+          - perl: "5.16"
+            dbi: "1.611"
           - perl: "5.16"
             dbi: "1.627"
           - perl: "5.36"
@@ -136,4 +151,9 @@ jobs:
             cpanm --notest "DBI@${{ matrix.dbi }}"
           fi
           cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
+      - name: Verify DBI version
+        env:
+          EXPECTED_DBI_VERSION: ${{ matrix.dbi }}
+        run: |
+          perl -MDBI -e 'print "DBI $DBI::VERSION\n"; die "Unexpected DBI version\n" if $ENV{EXPECTED_DBI_VERSION} ne "latest" && $DBI::VERSION != $ENV{EXPECTED_DBI_VERSION};'
       - run: perl Makefile.PL && make && make test

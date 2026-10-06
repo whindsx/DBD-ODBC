@@ -3491,6 +3491,10 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
                            fbh->datalen);
             }
         }
+#if defined(DBIstcf_STRICT) && defined(DBIstcf_DISCARD_STRING)
+        /* DBI 1.611 added the casting API and these flags. Detect the
+           interface instead of DBIXS_REVISION, whose numbering changed
+           in DBI 1.647. DBI 1.609 retains its non-casting behaviour. */
         /* If a bind type was specified we use DBI's sql_type_cast
            to cast it - currently only number types are handled */
         if (
@@ -3527,6 +3531,7 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
                 return Nullav;
             }
         }
+#endif
     } /* end of loop through bound columns */
     return av;
 }
@@ -4401,7 +4406,7 @@ int dbd_st_bind_col(
         imp_sth->fbh[field-1].bind_flags = 0; /* default to none */
     }
 
-    /* DBIXS 13590 added StrictlyTyped and DiscardString attributes */
+    /* DBI 1.611 added StrictlyTyped and DiscardString attributes. */
     if (attribs) {
         SV **svp;
 
@@ -4410,6 +4415,7 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "TreatAsLOB", 10, svp)) {
             imp_sth->fbh[field-1].bind_flags |= ODBC_TREAT_AS_LOB;
         }
+#if defined(DBIstcf_STRICT) && defined(DBIstcf_DISCARD_STRING)
         if (DBD_ATTRIB_TRUE(attribs, "StrictlyTyped", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_STRICT;
         }
@@ -4417,6 +4423,7 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "DiscardString", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_DISCARD_STRING;
         }
+#endif
     }
 
     if (DBIc_TRACE(imp_sth, DBD_TRACING, 0, 4)) {
