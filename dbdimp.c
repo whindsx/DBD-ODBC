@@ -3492,13 +3492,11 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
             }
         }
 /*
- * DBIXS_REVISION used to be a monotonically increasing Subversion revision.
- * Current DBI releases generate it from the Git history, so its numeric value
- * can be lower than the historical 13590 feature boundary.  DBI >= 1.648
- * also exposes DBIXS_VERSION in dbixs_rev.h; use that as the feature signal
- * for current headers while retaining the old revision check for older DBI.
+ * DBIXS_REVISION is no longer monotonically increasing, and DBIXS_VERSION
+ * is also defined by older DBI releases without the SQL type-cast API.
+ * Check DBIstcf_STRICT to enable casting only when that API is available.
  */
-#if DBIXS_REVISION > 13590 || defined(DBIXS_VERSION)
+#ifdef DBIstcf_STRICT
         /* If a bind type was specified we use DBI's sql_type_cast
            to cast it - currently only number types are handled */
         if (
@@ -3535,7 +3533,7 @@ AV *dbd_st_fetch(SV *sth, imp_sth_t *imp_sth)
                 return Nullav;
             }
         }
-#endif /* DBIXS_REVISION > 13590 || defined(DBIXS_VERSION) */
+#endif /* DBIstcf_STRICT */
 
     } /* end of loop through bound columns */
     return av;
@@ -4408,7 +4406,7 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "TreatAsLOB", 10, svp)) {
             imp_sth->fbh[field-1].bind_flags |= ODBC_TREAT_AS_LOB;
         }
-#if DBIXS_REVISION >= 13590 || defined(DBIXS_VERSION)
+#ifdef DBIstcf_STRICT
         if (DBD_ATTRIB_TRUE(attribs, "StrictlyTyped", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_STRICT;
         }
@@ -4416,7 +4414,7 @@ int dbd_st_bind_col(
         if (DBD_ATTRIB_TRUE(attribs, "DiscardString", 13, svp)) {
             imp_sth->fbh[field-1].bind_flags |= DBIstcf_DISCARD_STRING;
         }
-#endif  /* DBIXS_REVISION >= 13590 || defined(DBIXS_VERSION) */
+#endif  /* DBIstcf_STRICT */
     }
 
     if (DBIc_TRACE(imp_sth, DBD_TRACING, 0, 4)) {
