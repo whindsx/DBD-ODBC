@@ -49,7 +49,19 @@ if ($dbms_name !~ /Microsoft SQL Server/) {
     note('Not Microsoft SQL Server');
     exit 0;
 }
-my $sth = $dbh->prepare(q/SELECT :foo, :bar/);
+my $sql = q/SELECT :foo, :bar/;
+if ($driver_name =~ /tdsodbc/i) {
+    # FreeTDS rejects input/output bindings on a plain SELECT. Use declared
+    # OUTPUT parameters while retaining the initially-undef binding checks.
+    # The temporary procedure is removed when this connection closes.
+    $dbh->do(q{
+        CREATE PROCEDURE #rt79397
+            @foo varchar(30) OUTPUT, @bar varchar(30) OUTPUT
+        AS SELECT @foo, @bar
+    }) or BAIL_OUT("Unable to create temporary procedure: " . $dbh->errstr);
+    $sql = q/{call #rt79397(:foo, :bar)}/;
+}
+my $sth = $dbh->prepare($sql);
 ok($sth, "statement prepared");
 
 SKIP: {
