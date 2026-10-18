@@ -106,8 +106,18 @@ SKIP: {
                     $sth = $dbh->selectall_arrayref(
                         'select * from PERL_DBD_RT_59621');
                 };
-                ok($@, 'expected select on XML type too big failed'); # 9
-                is($sth->state, '01004', 'data truncation error'); # 10
+                my $truncation_error = $@;
+                ok($truncation_error, 'expected select on XML type too big failed'); # 9
+                my $state = $sth->state;
+                if ($driver_name =~ /tdsodbc/i && $state eq 'HY000') {
+                    # DBD::ODBC can detect truncation from the returned data
+                    # length and raise its own error without a driver 01004.
+                    like($truncation_error,
+                         qr/\Qst_fetch\/SQLFetch (long truncated DBI attribute LongTruncOk not set and\/or LongReadLen too small)\E/,
+                         'data truncation error'); # 10
+                } else {
+                    is($state, '01004', 'data truncation error'); # 10
+                }
 
                 # now bump up LongReadLen and all should be ok
                 # we need to make it more than 2 * expected in case it is
