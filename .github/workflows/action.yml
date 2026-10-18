@@ -237,6 +237,8 @@ jobs:
       - name: Trace execute_array under GDB
         if: ${{ always() && (steps.freetds-tests.outcome == 'success' || steps.freetds-tests.outcome == 'failure') }}
         timeout-minutes: 5
+        env:
+          DEBUGINFOD_URLS: https://debuginfod.ubuntu.com
         shell: bash
         run: |
           perl_binary=$(command -v perl)
@@ -247,7 +249,7 @@ jobs:
             gdb --batch --return-child-result \
               -ex 'set pagination off' \
               -ex 'set confirm off' \
-              -ex 'set debuginfod enabled off' \
+              -ex 'set debuginfod enabled on' \
               -ex 'run' \
               -ex 'info sharedlibrary' \
               -ex 'thread apply all bt full' \
