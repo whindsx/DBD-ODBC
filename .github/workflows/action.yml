@@ -189,7 +189,7 @@ jobs:
       - name: Install unixODBC and FreeTDS
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales
+          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales gdb
       - name: Create CP1252 locale for the varchar codepage test
         run: sudo localedef -i en_US -f CP1252 en_US.CP1252
       - name: Install latest DBI and test dependencies
@@ -205,7 +205,7 @@ jobs:
           odbcinst -q -d -n FreeTDS
           dpkg-query -W unixodbc tdsodbc
       - name: Build with Unicode support
-        run: perl Makefile.PL && make
+        run: perl Makefile.PL OPTIMIZE='-g -O0' && make
       - name: Wait for SQL Server through FreeTDS
         run: |
           for attempt in $(seq 1 60); do
@@ -227,6 +227,44 @@ jobs:
           fi
           exit 1
       - name: Run tests through FreeTDS
-        run: make test
+        id: freetds-tests
+        shell: bash
+        run: |
+          mkdir -p debug-artifacts
+          make test 2>&1 | tee debug-artifacts/make-test.log
         env:
           DBD_ODBC_TEST_LOCALE: en_US.CP1252
+      - name: Trace execute_array under GDB
+        if: ${{ always() && (steps.freetds-tests.outcome == 'success' || steps.freetds-tests.outcome == 'failure') }}
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          perl_binary=$(command -v perl)
+          # Repeat because the crash has not occurred on every local run.
+          for attempt in $(seq 1 3); do
+            debug_log="debug-artifacts/gdb-${attempt}.log"
+            set +e
+            gdb --batch --return-child-result \
+              -ex 'set pagination off' \
+              -ex 'set confirm off' \
+              -ex 'set debuginfod enabled off' \
+              -ex 'run' \
+              -ex 'info sharedlibrary' \
+              -ex 'thread apply all bt full' \
+              -ex 'info registers' \
+              --args "$perl_binary" -Mblib -I./t t/70execute_array_dbi.t \
+              2>&1 | tee "$debug_log"
+            debug_status=${PIPESTATUS[0]}
+            set -e
+            echo "GDB attempt ${attempt} exit status: ${debug_status}"
+            if grep -Eq 'received signal SIG(SEGV|ABRT|BUS)' "$debug_log"; then
+              break
+            fi
+          done
+      - name: Upload FreeTDS debug logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: freetds-gdb-logs
+          path: debug-artifacts/
+          if-no-files-found: ignore
