@@ -161,3 +161,72 @@ jobs:
       - run: perl Makefile.PL && make && make test
         env:
           DBD_ODBC_TEST_LOCALE: en_US.CP1252
+
+  freetds-job:
+    name: Perl latest / DBI latest / FreeTDS / SQL Server 2022
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: DBD0dbc_Strong_Pass!
+        ports:
+          - 1433:1433
+    env:
+      DBI_DSN: dbi:ODBC:DRIVER={FreeTDS};SERVER=localhost;PORT=1433;DATABASE=tempdb;TDS_Version=7.4;MARS_Connection=Yes;ClientCharset=CP1252
+      DBI_USER: sa
+      DBI_PASS: DBD0dbc_Strong_Pass!
+      PERL_MM_USE_DEFAULT: 1
+      DBD_ODBC_UNICODE: 1
+      AUTHOR_TESTING: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: latest
+      - name: Install unixODBC and FreeTDS
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales
+      - name: Create CP1252 locale for the varchar codepage test
+        run: sudo localedef -i en_US -f CP1252 en_US.CP1252
+      - name: Install latest DBI and test dependencies
+        run: |
+          cpanm --notest DBI
+          cpanm --notest Test::Output Test::Pod Test::Pod::Coverage Test::Kwalitee Test::Version
+      - name: Show Perl, DBI, and driver versions
+        run: |
+          perl -V
+          perl -MDBI -e 'print "DBI $DBI::VERSION\n";'
+          tsql -C
+          odbcinst -j
+          odbcinst -q -d -n FreeTDS
+          dpkg-query -W unixodbc tdsodbc
+      - name: Build with Unicode support
+        run: perl Makefile.PL && make
+      - name: Wait for SQL Server through FreeTDS
+        run: |
+          for attempt in $(seq 1 60); do
+            if perl -Mblib -MDBI -e '
+              my $dbh = DBI->connect($ENV{DBI_DSN}, $ENV{DBI_USER}, $ENV{DBI_PASS},
+                { RaiseError => 1, PrintError => 0, odbc_login_timeout => 2 });
+              $dbh->selectrow_array("SELECT 1");
+              $dbh->disconnect;
+            ' >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SQL Server did not become ready through FreeTDS"
+          docker ps -a
+          container_id=$(docker ps -aq --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -1)
+          if [ -n "$container_id" ]; then
+            docker logs "$container_id"
+          fi
+          exit 1
+      - name: Run tests through FreeTDS
+        run: make test
+        env:
+          DBD_ODBC_TEST_LOCALE: en_US.CP1252
