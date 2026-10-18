@@ -190,6 +190,21 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales gdb
+      - name: Install matching FreeTDS debug symbols
+        run: |
+          sudo apt-get install -y ubuntu-dbgsym-keyring
+          source /etc/os-release
+          printf '%s\n' \
+            'Types: deb' \
+            'URIs: http://ddebs.ubuntu.com/' \
+            "Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates" \
+            'Components: main restricted universe multiverse' \
+            'Signed-By: /usr/share/keyrings/ubuntu-dbgsym-keyring.gpg' \
+            | sudo tee /etc/apt/sources.list.d/ddebs.sources
+          sudo apt-get update -y
+          freetds_version=$(dpkg-query -W -f='${Version}' tdsodbc)
+          sudo apt-get install -y "tdsodbc-dbgsym=${freetds_version}"
+          dpkg-query -W tdsodbc tdsodbc-dbgsym
       - name: Create CP1252 locale for the varchar codepage test
         run: sudo localedef -i en_US -f CP1252 en_US.CP1252
       - name: Install latest DBI and test dependencies
@@ -238,7 +253,7 @@ jobs:
         if: ${{ always() && (steps.freetds-tests.outcome == 'success' || steps.freetds-tests.outcome == 'failure') }}
         timeout-minutes: 5
         env:
-          DEBUGINFOD_URLS: https://debuginfod.ubuntu.com
+          DEBUGINFOD_URLS: ""
         shell: bash
         run: |
           perl_binary=$(command -v perl)
@@ -249,7 +264,7 @@ jobs:
             gdb --batch --return-child-result \
               -ex 'set pagination off' \
               -ex 'set confirm off' \
-              -ex 'set debuginfod enabled on' \
+              -iex 'set debuginfod enabled off' \
               -ex 'run' \
               -ex 'info sharedlibrary' \
               -ex 'thread apply all bt full' \
