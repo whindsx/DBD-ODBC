@@ -125,7 +125,12 @@ SKIP: {
       SKIP: {
             skip "Failed to prepare", 1 if ($ev);
             my $x = 'x' x 500000;
-            ok($sth->execute($x), "execute insert");
+            # FreeTDS otherwise infers a character parameter, which SQL
+            # Server cannot implicitly convert to VARBINARY(MAX).
+            $sth->bind_param(1, $x, SQL_LONGVARBINARY);
+            my $inserted = eval { $sth->execute(); };
+            ok($inserted, "execute insert");
+            diag($@) if $@;
         };
     };
 

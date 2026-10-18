@@ -614,9 +614,11 @@ AS
    is($output, 1, "test procedure with no input params");
    $sth1 = undef;		# could still be active with some drivers
 
+   # Drivers without asynchronous execution leave the attribute disabled.
+   my $async_mode = $dbh->get_info($GetInfoType{SQL_ASYNC_MODE});
    $dbh->{odbc_async_exec} = 1;
-   # print "odbc_async_exec is: $dbh->{odbc_async_exec}\n";
-   is($dbh->{odbc_async_exec}, 1, "test odbc_async_exec attribute set");
+   is($dbh->{odbc_async_exec}, $async_mode ? 1 : 0,
+      "odbc_async_exec agrees with driver async support");
 
    # not sure if this should be a test.  May have permissions problems, but
    # it's the only sample of the error handler stuff I have.
@@ -677,6 +679,9 @@ AS
        my @a = split(q/:/, $ENV{DBI_DSN});
        $dsn = join(q/:/, @a[0..($#a - 1)]) . ":DSN=" . $a[-1];
    }
+   # Replace an existing setting rather than relying on driver-specific
+   # precedence when the connection string contains duplicate attributes.
+   $dsn =~ s/;\s*MARS_Connection\s*=\s*[^;]*//ig;
    my $base_dsn = $dsn;
    $dsn .= ";MARS_Connection=no";
    $dbh = DBI->connect($dsn, $ENV{DBI_USER}, $ENV{DBI_PASS}, {PrintError => 0});
