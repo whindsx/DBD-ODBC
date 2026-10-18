@@ -67,6 +67,13 @@ if ($dbh->get_info($GetInfoType{SQL_CATALOG_NAME}) ne 'N') {
 }
 
 if ($dbh->get_info($GetInfoType{SQL_SCHEMA_USAGE}) != 0) {
+  SKIP: {
+    # TODO: Recheck with newer FreeTDS versions. With FreeTDS 1.3.17,
+    # SQLTables('', '%', '') returns table rows rather than schema names,
+    # reproduced with both SQLTables and SQLTablesW outside DBD::ODBC.
+    skip "FreeTDS returns table rows for schema-only enumeration", 1
+        if ($dbh->get_info($GetInfoType{SQL_DRIVER_NAME}) =~ /tdsodbc/i);
+
     # test type_info('','%','') which should return schema only
     my $s = $dbh->table_info('', '%', '');
     my $r = $s->fetchall_arrayref;
@@ -90,6 +97,7 @@ if ($dbh->get_info($GetInfoType{SQL_SCHEMA_USAGE}) != 0) {
         }
         ok($pass, "schema only") or diag(Dumper($r));
     }
+  }
 }
 
 {
