@@ -189,7 +189,7 @@ jobs:
       - name: Install unixODBC and FreeTDS
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales gdb
+          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales gdb valgrind
       - name: Install matching FreeTDS debug symbols
         run: |
           sudo apt-get install -y ubuntu-dbgsym-keyring
@@ -262,13 +262,8 @@ jobs:
             debug_log="debug-artifacts/gdb-${attempt}.log"
             set +e
             gdb --batch --return-child-result \
-              -ex 'set pagination off' \
-              -ex 'set confirm off' \
               -iex 'set debuginfod enabled off' \
-              -ex 'run' \
-              -ex 'info sharedlibrary' \
-              -ex 'thread apply all bt full' \
-              -ex 'info registers' \
+              -x .github/gdb/freetds-array.gdb \
               --args "$perl_binary" -Mblib -I./t t/70execute_array_dbi.t \
               2>&1 | tee "$debug_log"
             debug_status=${PIPESTATUS[0]}
@@ -278,6 +273,16 @@ jobs:
               break
             fi
           done
+      - name: Check execute_array memory access with Valgrind
+        if: ${{ always() && (steps.freetds-tests.outcome == 'success' || steps.freetds-tests.outcome == 'failure') }}
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          valgrind --tool=memcheck --track-origins=yes --num-callers=30 \
+            --leak-check=no --error-exitcode=99 \
+            --log-file=debug-artifacts/valgrind.log \
+            "$(command -v perl)" -Mblib -I./t t/70execute_array_dbi.t \
+            >debug-artifacts/valgrind-test.log 2>&1
       - name: Upload FreeTDS debug logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
