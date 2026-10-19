@@ -24,6 +24,7 @@ sub new {
 
     $dbh = setup($dbh, $dbi_version);
     $self->{_dbh} = $dbh;
+    $self->{_dbi_version} = $dbi_version;
 
     # find out how the driver supports row counts and parameter status
     $self->{_param_array_row_counts} = $dbh->get_info(153);
@@ -419,6 +420,14 @@ sub row_wise
     # The data pushed into the first table is retrieved via ArrayTupleFetch
     # from the second table by passing an executed select statement handle into
     # execute_array.
+  SKIP: {
+    # TODO: Revisit DBI's active-statement ArrayTupleFetch with FreeTDS.
+    # Concurrent fetch/insert crashed with 1.3.17 and showed invalid memory
+    # access with 1.5.19. Keep callback-based and native array tests active.
+    # 2 SELECT checks, 12 insert/status checks, and 10 fetched-value checks.
+    skip "FreeTDS concurrent fetch/insert is unstable", 24
+        if $self->{_dbi_version} && $dbh->get_info(6) =~ /tdsodbc/i;
+
     note("row_size via select");
     clear_table($dbh, $table);
     $sth = $dbh->prepare(qq/insert into $table values(?,?)/);
@@ -439,6 +448,7 @@ sub row_wise
             fetch => $sth2, requires_mas => 1});
     return if $res && $res eq 'mas'; # aborted , does not seem to support MAS
     check_data($dbh, \@p1, \@p2);
+  }
 }
 
 # test updates
