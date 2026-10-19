@@ -163,7 +163,7 @@ jobs:
           DBD_ODBC_TEST_LOCALE: en_US.CP1252
 
   freetds-job:
-    name: Perl latest / DBI latest / FreeTDS / SQL Server 2022
+    name: Perl latest / DBI latest / FreeTDS 1.5.19 / SQL Server 2022
     runs-on: ubuntu-latest
     services:
       sqlserver:
@@ -186,25 +186,32 @@ jobs:
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: latest
-      - name: Install unixODBC and FreeTDS
+      - name: Install unixODBC and FreeTDS build dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y unixodbc unixodbc-dev tdsodbc freetds-bin locales gdb valgrind
-      - name: Install matching FreeTDS debug symbols
+          sudo apt-get install -y build-essential pkg-config unixodbc unixodbc-dev odbcinst libgnutls28-dev locales gdb valgrind
+      - name: Build FreeTDS 1.5.19 with debug symbols
         run: |
-          sudo apt-get install -y ubuntu-dbgsym-keyring
-          source /etc/os-release
+          freetds_version=1.5.19
+          freetds_prefix="$RUNNER_TEMP/freetds-install"
+          curl --fail --location --retry 3 \
+            "https://www.freetds.org/files/stable/freetds-${freetds_version}.tar.gz" \
+            -o "$RUNNER_TEMP/freetds.tar.gz"
+          echo "ff70d0c8ae8dd23e7b1314274d6e9d30b479998415760b3fa656754b737c2bd6  $RUNNER_TEMP/freetds.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/freetds.tar.gz" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP/freetds-${freetds_version}"
+          CFLAGS='-g -O0' ./configure --prefix="$freetds_prefix" \
+            --with-unixodbc=/usr --with-gnutls --disable-static
+          make -j2
+          make install
           printf '%s\n' \
-            'Types: deb' \
-            'URIs: http://ddebs.ubuntu.com/' \
-            "Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates" \
-            'Components: main restricted universe multiverse' \
-            'Signed-By: /usr/share/keyrings/ubuntu-dbgsym-keyring.gpg' \
-            | sudo tee /etc/apt/sources.list.d/ddebs.sources
-          sudo apt-get update -y
-          freetds_version=$(dpkg-query -W -f='${Version}' tdsodbc)
-          sudo apt-get install -y "tdsodbc-dbgsym=${freetds_version}"
-          dpkg-query -W tdsodbc tdsodbc-dbgsym
+            '[FreeTDS]' \
+            "Description=FreeTDS ${freetds_version} debug build" \
+            "Driver=${freetds_prefix}/lib/libtdsodbc.so" \
+            > "$RUNNER_TEMP/freetds-driver.ini"
+          sudo odbcinst -i -d -f "$RUNNER_TEMP/freetds-driver.ini"
+          echo "$freetds_prefix/bin" >> "$GITHUB_PATH"
+          echo "FREETDS_PREFIX=$freetds_prefix" >> "$GITHUB_ENV"
       - name: Create CP1252 locale for the varchar codepage test
         run: sudo localedef -i en_US -f CP1252 en_US.CP1252
       - name: Install latest DBI and test dependencies
@@ -218,7 +225,8 @@ jobs:
           tsql -C
           odbcinst -j
           odbcinst -q -d -n FreeTDS
-          dpkg-query -W unixodbc tdsodbc
+          dpkg-query -W unixodbc
+          file "$FREETDS_PREFIX/lib/libtdsodbc.so"
       - name: Build with Unicode support
         run: perl Makefile.PL OPTIMIZE='-g -O0' && make
       - name: Wait for SQL Server through FreeTDS
