@@ -4278,7 +4278,7 @@ static int rebind_param(
         (!phs->bp_value_ptr) ||                 /* not bound before */
         ((param_io_type == SQL_PARAM_INPUT) &&    /* input parameter */
          ((value_ptr != phs->bp_value_ptr) ||
-          (value_type != phs->value_type) ||
+          (value_type != phs->bp_value_type) ||
           (column_size != phs->bp_column_size) ||
           (d_digits != phs->bp_d_digits) ||
           (buffer_length != phs->bp_buffer_length)))) {
@@ -4319,6 +4319,7 @@ static int rebind_param(
             return 0;
         }
         phs->bp_value_ptr = value_ptr;
+        phs->bp_value_type = value_type;
         phs->value_type = value_type;
         phs->bp_column_size = column_size;
         phs->bp_d_digits = d_digits;

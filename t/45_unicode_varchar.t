@@ -279,5 +279,18 @@ execute($s, 1, $codepage);
 execute($s, 2, $unicode);
 show_it($dbh, [2,2], [2,2], ['0xa380', '0x80a3'], [1]);
 
+# Match the column size and buffer lengths so a type change alone must
+# trigger SQLBindParameter when Perl reuses the parameter buffer.
+# ASCII narrow data makes this independent of the client codepage.
+$s->finish;
+undef $s;
+$dbh->do(q/alter table PERL_DBD_TABLE1 alter column a varchar(4) collate Latin1_General_CI_AS/);
+diag "Switching wide and narrow bindings with equal buffer lengths:\n";
+$s = $dbh->prepare($sql);
+execute($s, 1, $unicode); # two UTF-16 code units: four bytes
+execute($s, 2, 'ABCD');   # four narrow bytes
+execute($s, 3, $unicode);
+show_it($dbh, [2,4,2], [2,4,2], ['0x80a3', '0x41424344', '0x80a3']);
+
 Test::NoWarnings::had_no_warnings() if ($has_test_nowarnings);
 done_testing();
